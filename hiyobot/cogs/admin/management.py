@@ -4,24 +4,35 @@ from discord.ext.commands.context import Context
 from discord.ext.commands.core import command, is_owner
 from discord.ext.tasks import loop
 
-from Hiyobot.bot import Hiyobot
+import hiyobot
+from hiyobot.bot import Hiyobot
 
 
-class Issue(Cog):
+class Management(Cog):
     def __init__(self, bot: Hiyobot):
         self.bot = bot
-        self.check_heliotrope.start()
 
-    @loop(minutes=5.0)
-    async def check_heliotrope(self):
-        try:
-            await self.bot.rose.latency()
-        except:
-            self.bot.heliotrope_issue = True
+    async def bot_check(self, ctx: Context):
+        # Temp
+        await ctx.send(
+            f"현재 봇의 릴리즈채널은 {hiyobot.version_info.releaselevel} 입니다.\n매우 불안정 하오니 버그 발생시 ``&문의``명령어를 통해 문의해주세요",
+            delete_after=10,
+        )
+        if self.bot.maintenance and not await self.bot.is_owner(ctx.author):
+            await ctx.send(
+                embed=Embed(
+                    title="봇이 점검중입니다.",
+                    description=f"사유: ``{self.bot.maintenance_message}``\n\n[공식 디코](https://discord.gg/PSshFYr)",
+                )
+            )
+            return False
         else:
-            self.bot.heliotrope_issue = False
+            if self.bot.maintenance:
+                await ctx.send("경고: 유지보수 상태입니다.")
 
-    @command("현황")
+        return True
+
+    @command("상태")
     @is_owner()
     async def _setting(self, ctx: Context):
         if self.bot.heliotrope_issue or self.bot.maintenance:
@@ -78,4 +89,4 @@ class Issue(Cog):
 
 
 def setup(bot: Hiyobot):
-    bot.add_cog(Issue(bot))
+    bot.add_cog(Management(bot))

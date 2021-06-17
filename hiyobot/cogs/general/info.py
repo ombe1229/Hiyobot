@@ -1,4 +1,4 @@
-import os
+import asyncio
 import sys
 import time
 from json.decoder import JSONDecodeError
@@ -9,12 +9,12 @@ import psutil
 from aiohttp.client_exceptions import ContentTypeError
 from discord.ext import commands
 
-import Hiyobot
-from Hiyobot.bot import Hiyobot as class_hiyobot
+import hiyobot
+from hiyobot.bot import Hiyobot
 
 
 class Info(commands.Cog):
-    def __init__(self, bot: class_hiyobot):
+    def __init__(self, bot: Hiyobot):
         self.bot = bot
         self.proc = psutil.Process()
 
@@ -29,31 +29,14 @@ class Info(commands.Cog):
         await ctx.trigger_typing()
         latency = round((time.perf_counter() - message_latency) * 1000, 2)
 
-        try:
-            hiyobi_latency = round(await self.bot.hiyobi.latency() * 1000, 2)
-        except JSONDecodeError:
-            hiyobi_latency = None
-
-        try:
-            heliotrope_latency = round(await self.bot.rose.latency() * 1000, 2)
-        except ContentTypeError:
-            heliotrope_latency = None
-
-        try:
-            pixiv_latency = round(await self.bot.pixiv.latency() * 1000, 2)
-        except ContentTypeError:
-            pixiv_latency = None
-
         embed = discord.Embed(
-            title=f"Info\nCommand prefix: `&`\nHiyobot: `{Hiyobot.__version__}`",
+            title=f"Info\nCommand prefix: `{self.bot.command_prefix}`\nHiyobot: `{hiyobot.__version__}`\nRelease Channel: `{hiyobot.version_info.releaselevel}`",
             description=f"Python `{sys.version}` on `{sys.platform}`".replace("\n", ""),
-            url="https://saebasol.statuspage.io/",
         )
         embed.add_field(
             name="discord.py version", value=f"{discord.__version__}", inline=False
         )
         with self.proc.oneshot():
-
             mem = self.proc.memory_full_info()
             name = self.proc.name()
             pid = self.proc.pid
@@ -82,20 +65,8 @@ class Info(commands.Cog):
             name="Average message latency",
             value=f"{latency}ms",
         )
-        embed.add_field(
-            name="Average Hiyobi API server latency",
-            value=f"{hiyobi_latency if hiyobi_latency else '가져올 수 없음'}ms",
-        )
-        embed.add_field(
-            name="Average Heliotrope server latency",
-            value=f"{heliotrope_latency if heliotrope_latency else '가져올 수 없음'}ms",
-        )
-        embed.add_field(
-            name="Average Pixiv API server latency",
-            value=f"{pixiv_latency if pixiv_latency else '가져올 수 없음'}ms",
-        )
         await ctx.send(embed=embed)
 
 
-def setup(bot: class_hiyobot):
+def setup(bot: Hiyobot):
     bot.add_cog(Info(bot))

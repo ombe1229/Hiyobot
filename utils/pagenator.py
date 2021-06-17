@@ -6,7 +6,7 @@ from discord.embeds import Embed
 from discord.ext.commands.context import Context
 from discord.message import Message
 
-from Hiyobot.bot import Hiyobot
+from hiyobot.bot import Hiyobot
 
 
 async def pagenator(
@@ -36,7 +36,13 @@ async def pagenator(
             reaction, user = await bot.wait_for(
                 event="reaction_add", check=check, timeout=80.0
             )
-            if user.id != ctx.author.id or reaction.message.id != msg.id:
+            if reaction.message.id != msg.id:
+                continue
+
+            if user.id != ctx.author.id:
+                with suppress(Exception):
+                    await msg.remove_reaction(reaction, user)
+
                 continue
 
         except asyncio.TimeoutError:
